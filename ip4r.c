@@ -5,6 +5,8 @@
   New type 'ip4r' used to represent a range of IPv4 addresses, along
   with support for GiST and rtree indexing of the type.
 
+  V1.05: updates for 9.0
+
   V1.04: updates for 8.4
 
   V1.03: fix the inet conversions which were not handling short varlenas
@@ -40,7 +42,7 @@
   broken somehow; the resulting indexes are bloated with excessive
   numbers of single-value leaf pages.
 
-  this code by andrew@supernews.net Oct 2004 - Dec 2005
+  this code by andrew@tao11.riddles.org.uk Oct 2004 - Dec 2005
 
   [derived from 'ipr' by:  
    Steve Atkins <steve@blighty.com> August 2003, derived from the 'seg'
@@ -395,9 +397,11 @@ bool ip4r_extends_right_of_internal(IP4R *left, IP4R *right)
 
 /* PG version dependencies */
 
-#if !defined(IP4R_PGVER) || IP4R_PGVER >= 9000000 || IP4R_PGVER < 7003000
+#if !defined(IP4R_PGVER) || IP4R_PGVER < 7003000
 #error "Unknown or unsupported postgresql version"
 #endif
+
+/* 9.0 has no known changes from 8.4 that affect this code. */
 
 /* 8.4 adds parameters to gist consistent() to support dynamic setting
  * of the "recheck" flag, and defaults recheck to true (giving us some
