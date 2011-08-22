@@ -641,6 +641,68 @@ iprange_cast_from_ipaddr(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+PG_FUNCTION_INFO_V1(iprange_cast_from_ip4r);
+Datum
+iprange_cast_from_ip4r(PG_FUNCTION_ARGS)
+{
+    IP4R *ipr = PG_GETARG_IP4R_P(0);
+	IPR res;
+
+	res.ip4r = *ipr;
+	PG_RETURN_IPR_P(ipr_pack(PGSQL_AF_INET, &res));
+}
+
+PG_FUNCTION_INFO_V1(iprange_cast_from_ip6r);
+Datum
+iprange_cast_from_ip6r(PG_FUNCTION_ARGS)
+{
+    IP6R *ipr = PG_GETARG_IP6R_P(0);
+	IPR res;
+
+	res.ip6r = *ipr;
+	PG_RETURN_IPR_P(ipr_pack(PGSQL_AF_INET6, &res));
+}
+
+PG_FUNCTION_INFO_V1(iprange_cast_to_ip4r);
+Datum
+iprange_cast_to_ip4r(PG_FUNCTION_ARGS)
+{
+    IPR_P iprp = PG_GETARG_IPR_P(0);
+	IPR ipr;
+	int af = ipr_unpack(iprp,&ipr);
+	IP4R *res;
+
+	if (af != PGSQL_AF_INET)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("invalid IPR value for conversion to IP4R")));
+
+	res = palloc(sizeof(IP4R));
+	*res = ipr.ip4r;
+
+	PG_RETURN_IP4R_P(res);
+}
+
+PG_FUNCTION_INFO_V1(iprange_cast_to_ip6r);
+Datum
+iprange_cast_to_ip6r(PG_FUNCTION_ARGS)
+{
+    IPR_P iprp = PG_GETARG_IPR_P(0);
+	IPR ipr;
+	int af = ipr_unpack(iprp,&ipr);
+	IP6R *res;
+
+	if (af != PGSQL_AF_INET6)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("invalid IPR value for conversion to IP6R")));
+
+	res = palloc(sizeof(IP6R));
+	*res = ipr.ip6r;
+
+	PG_RETURN_IP6R_P(res);
+}
+
 
 static
 Datum
@@ -1355,6 +1417,37 @@ iprange_size(PG_FUNCTION_ARGS)
 		default:
 			iprange_internal_error();
 	}
+}
+
+PG_FUNCTION_INFO_V1(iprange_size_exact);
+Datum
+iprange_size_exact(PG_FUNCTION_ARGS)
+{
+	IPR_P ipp = PG_GETARG_IPR_P(0);
+	IPR ipr;
+	int af = ipr_unpack(ipp, &ipr);
+	Datum u,l,d,s;
+
+	switch (af)
+	{
+		case 0:
+			s = DirectFunctionCall3(numeric_in, CStringGetDatum("680564733841876926926749214863536422912"), 0, Int32GetDatum(-1));
+			PG_RETURN_DATUM(s);
+
+		case PGSQL_AF_INET:
+			l = DirectFunctionCall1(ip4_cast_to_numeric, IP4GetDatum(ipr.ip4r.lower));
+			u = DirectFunctionCall1(ip4_cast_to_numeric, IP4GetDatum(ipr.ip4r.upper));
+			break;
+
+		case PGSQL_AF_INET6:
+			l = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr.ip6r.lower));
+			u = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr.ip6r.upper));
+			break;
+	}
+
+	d = DirectFunctionCall2(numeric_sub, u, l);
+	s = DirectFunctionCall1(numeric_inc, d);
+	PG_RETURN_DATUM(s);
 }
 
 PG_FUNCTION_INFO_V1(iprange_prefixlen);

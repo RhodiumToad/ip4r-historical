@@ -1154,6 +1154,18 @@ ip6r_size(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(size);
 }
 
+PG_FUNCTION_INFO_V1(ip6r_size_exact);
+Datum
+ip6r_size_exact(PG_FUNCTION_ARGS)
+{
+	IP6R *ipr = PG_GETARG_IP6R_P(0);
+	Datum l = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr->lower));
+	Datum u = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr->upper));
+	Datum d = DirectFunctionCall2(numeric_sub, u, l);
+	Datum s = DirectFunctionCall1(numeric_inc, d);
+	PG_RETURN_DATUM(s);
+}
+
 PG_FUNCTION_INFO_V1(ip6r_prefixlen);
 Datum
 ip6r_prefixlen(PG_FUNCTION_ARGS)
