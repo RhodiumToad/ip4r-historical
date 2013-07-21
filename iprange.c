@@ -1443,6 +1443,9 @@ iprange_size_exact(PG_FUNCTION_ARGS)
 			l = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr.ip6r.lower));
 			u = DirectFunctionCall1(ip6_cast_to_numeric, IP6PGetDatum(&ipr.ip6r.upper));
 			break;
+
+		default:
+			iprange_internal_error();
 	}
 
 	d = DirectFunctionCall2(numeric_sub, u, l);
